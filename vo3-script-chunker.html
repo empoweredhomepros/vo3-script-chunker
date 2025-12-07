@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>VO3 Script Chunker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1em;
+        }
+        
+        .content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            padding: 30px;
+        }
+        
+        @media (max-width: 968px) {
+            .content {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .panel {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .panel h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+        
+        .controls {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .control-group {
+            margin-bottom: 15px;
+        }
+        
+        .control-group:last-child {
+            margin-bottom: 0;
+        }
+        
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+            font-size: 0.95em;
+        }
+        
+        .control-group input[type="number"],
+        .control-group input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+            transition: border-color 0.3s;
+        }
+        
+        .control-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .slider-container input[type="range"] {
+            flex: 1;
+        }
+        
+        .slider-value {
+            background: #667eea;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-weight: 600;
+            min-width: 45px;
+            text-align: center;
+        }
+        
+        textarea {
+            width: 100%;
+            min-height: 400px;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            font-family: inherit;
+            resize: vertical;
+            transition: border-color 0.3s;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+        
+        .button:active {
+            transform: translateY(0);
+        }
+        
+        .output {
+            background: #f8f9fa;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            min-height: 400px;
+            overflow-y: auto;
+            max-height: 600px;
+        }
+        
+        .take {
+            background: white;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .take-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .take-number {
+            background: #667eea;
+            color: white;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-weight: 700;
+            font-size: 0.9em;
+        }
+        
+        .take-duration {
+            color: #666;
+            font-size: 0.9em;
+        }
+        
+        .take-content {
+            line-height: 1.8;
+            font-size: 1.05em;
+        }
+        
+        .filler {
+            background: #ffe5e5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #cc0000;
+            font-style: italic;
+            text-decoration: line-through;
+        }
+        
+        .overlap {
+            background: #fff4e5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #ff8800;
+        }
+        
+        .main-content {
+            background: #e5f4e5;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #006600;
+            font-weight: 500;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #ddd;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.9em;
+        }
+        
+        .legend-box {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        .copy-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85em;
+            font-weight: 600;
+            transition: background 0.2s;
+        }
+        
+        .copy-button:hover {
+            background: #218838;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: #999;
+            padding: 60px 20px;
+        }
+        
+        .empty-state svg {
+            width: 80px;
+            height: 80px;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎙️ VO3 Script Chunker</h1>
+            <p>Break down your scripts into perfect 8-second VO3 chunks with smart overlap</p>
+        </div>
+        
+        <div class="content">
+            <div class="panel">
+                <h2>📝 Input Script</h2>
+                
+                <div class="controls">
+                    <div class="control-group">
+                        <label>Target Duration (seconds)</label>
+                        <div class="slider-container">
+                            <input type="range" id="duration" min="5" max="9" step="0.5" value="7">
+                            <span class="slider-value" id="durationValue">7s</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>Overlap Duration (seconds)</label>
+                        <div class="slider-container">
+                            <input type="range" id="overlap" min="1" max="4" step="0.5" value="2">
+                            <span class="slider-value" id="overlapValue">2s</span>
+                        </div>
+                    </div>
+                    
+                    <div class="control-group">
+                        <label>Filler Prefix (optional - will be cut in editing)</label>
+                        <input type="text" id="filler" placeholder="e.g., So anyway, or Like I was saying," value="So anyway,">
+                    </div>
+                </div>
+                
+                <textarea id="scriptInput" placeholder="Paste your script here...">After 12-hour shifts caring for everyone else's kids, I come home completely tapped out for my own family.
+The stuff I see at work follows me home. I can't shut my brain off. I'm always on edge, even when I'm supposed to be relaxing. My kids deserve a mom who's actually present, not just going through the motions.
+But then I found Dr. Cianna's Conscious Collective. It's course and community all about being grounded and resilient so you can bounce back from stress. 
+Healthcare burnout is real and you can get help for only $7. 
+It's not just training videos - it's an actual community of women who understand. There's real people supporting each other, helping to use simple breath work, movement and meditation to help calm your nervous system so you can be at your best. .
+The exercises literally takes like  5 minutes and can be done before work or even on quick breaks. 
+If you're thinking 'I should be stronger' - girl, we all need help sometimes. Check the link below.</textarea>
+                
+                <button class="button" onclick="processScript()">Generate VO3 Takes ✨</button>
+            </div>
+            
+            <div class="panel">
+                <h2>🎬 VO3 Takes</h2>
+                
+                <div class="legend">
+                    <div class="legend-item">
+                        <div class="legend-box" style="background: #ffe5e5;"></div>
+                        <span><strong>Filler</strong> - Cut in edit</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-box" style="background: #fff4e5;"></div>
+                        <span><strong>Overlap</strong> - For smooth transitions</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-box" style="background: #e5f4e5;"></div>
+                        <span><strong>Main</strong> - Keep this content</span>
+                    </div>
+                </div>
+                
+                <div class="output" id="output">
+                    <div class="empty-state">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path>
+                        </svg>
+                        <p>Your VO3 takes will appear here</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Update slider values display
+        document.getElementById('duration').addEventListener('input', function() {
+            document.getElementById('durationValue').textContent = this.value + 's';
+        });
+        
+        document.getElementById('overlap').addEventListener('input', function() {
+            document.getElementById('overlapValue').textContent = this.value + 's';
+        });
+        
+        function estimateDuration(text) {
+            // Average speaking rate: ~150 words per minute = 2.5 words per second
+            const words = text.trim().split(/\s+/).length;
+            return words / 2.5;
+        }
+        
+        function splitIntoSentences(text) {
+            // Split on sentence boundaries but keep the punctuation
+            return text.match(/[^.!?]+[.!?]+/g) || [text];
+        }
+        
+        function processScript() {
+            const script = document.getElementById('scriptInput').value.trim();
+            const targetDuration = parseFloat(document.getElementById('duration').value);
+            const overlapDuration = parseFloat(document.getElementById('overlap').value);
+            const fillerPrefix = document.getElementById('filler').value.trim();
+            
+            if (!script) {
+                document.getElementById('output').innerHTML = `
+                    <div class="empty-state">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+                        </svg>
+                        <p>Please paste a script first</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            // Split script into sentences
+            const sentences = splitIntoSentences(script);
+            const takes = [];
+            const minDuration = targetDuration - 1.5; // Acceptable range: target ± 1.5s
+            const maxDuration = targetDuration + 1.5;
+            
+            let i = 0;
+            while (i < sentences.length) {
+                const sentence = sentences[i].trim();
+                const sentenceDuration = estimateDuration(sentence);
+                
+                // If this sentence alone is in acceptable range, use it as-is (no overlap)
+                if (sentenceDuration >= minDuration && sentenceDuration <= maxDuration) {
+                    takes.push({
+                        text: sentence,
+                        duration: sentenceDuration,
+                        overlap: null, // No overlap needed
+                        previousOverlap: null,
+                        needsOverlap: false
+                    });
+                    i++;
+                }
+                // If sentence is too short, try combining with next sentence(s)
+                else if (sentenceDuration < minDuration) {
+                    let combinedText = sentence;
+                    let combinedDuration = sentenceDuration;
+                    let endIndex = i;
+                    
+                    // Keep adding sentences until we hit a good duration
+                    while (endIndex + 1 < sentences.length && combinedDuration < minDuration) {
+                        endIndex++;
+                        const nextSentence = sentences[endIndex].trim();
+                        const nextDuration = estimateDuration(nextSentence);
+                        
+                        // Check if adding full sentence would be too much
+                        if (combinedDuration + nextDuration > maxDuration) {
+                            // Add only part of the next sentence
+                            const words = nextSentence.split(/\s+/);
+                            const wordsNeeded = Math.ceil((targetDuration - combinedDuration) * 2.5);
+                            const partialText = words.slice(0, wordsNeeded).join(' ');
+                            
+                            // Create overlap zone
+                            const overlapWords = Math.ceil(overlapDuration * 2.5);
+                            const overlapText = words.slice(0, overlapWords).join(' ');
+                            
+                            takes.push({
+                                text: combinedText + ' ' + partialText,
+                                duration: estimateDuration(combinedText + ' ' + partialText),
+                                overlap: overlapText,
+                                previousOverlap: null,
+                                needsOverlap: true
+                            });
+                            
+                            // Next take starts with the overlap
+                            i = endIndex;
+                            break;
+                        } else {
+                            // Add the full sentence
+                            combinedText += ' ' + nextSentence;
+                            combinedDuration += nextDuration;
+                            
+                            // If we're now in good range, save it
+                            if (combinedDuration >= minDuration) {
+                                takes.push({
+                                    text: combinedText,
+                                    duration: combinedDuration,
+                                    overlap: null,
+                                    previousOverlap: null,
+                                    needsOverlap: false
+                                });
+                                i = endIndex + 1;
+                                break;
+                            }
+                        }
+                    }
+                    
+                    // If we've reached the end, add what we have
+                    if (endIndex === sentences.length - 1 && i <= endIndex) {
+                        takes.push({
+                            text: combinedText,
+                            duration: combinedDuration,
+                            overlap: null,
+                            previousOverlap: null,
+                            needsOverlap: false
+                        });
+                        i = endIndex + 1;
+                    }
+                }
+                // If sentence is too long, we need to split it
+                else {
+                    const words = sentence.split(/\s+/);
+                    const targetWords = Math.ceil(targetDuration * 2.5);
+                    const chunk = words.slice(0, targetWords).join(' ');
+                    
+                    // Create overlap
+                    const overlapWords = Math.ceil(overlapDuration * 2.5);
+                    const overlapText = words.slice(0, overlapWords).join(' ');
+                    
+                    takes.push({
+                        text: chunk,
+                        duration: estimateDuration(chunk),
+                        overlap: overlapText,
+                        previousOverlap: null,
+                        needsOverlap: true
+                    });
+                    
+                    // Put the rest back as a new sentence for next iteration
+                    const remainder = words.slice(targetWords).join(' ');
+                    sentences[i] = remainder;
+                    // Don't increment i, process the remainder next
+                }
+            }
+            
+            // Now process overlaps between takes
+            for (let j = 1; j < takes.length; j++) {
+                const prevTake = takes[j - 1];
+                if (prevTake.needsOverlap && prevTake.overlap) {
+                    takes[j].previousOverlap = prevTake.overlap;
+                }
+            }
+            
+            // Render takes
+            renderTakes(takes, fillerPrefix);
+        }
+        
+        function renderTakes(takes, fillerPrefix) {
+            const output = document.getElementById('output');
+            
+            if (takes.length === 0) {
+                output.innerHTML = `
+                    <div class="empty-state">
+                        <p>No takes generated</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            
+            takes.forEach((take, index) => {
+                const takeNumber = index + 1;
+                const hasFillerPrefix = fillerPrefix && index === 0;
+                const hasPreviousOverlap = take.previousOverlap;
+                const hasNextOverlap = take.needsOverlap && take.overlap;
+                
+                // Build the full take text for copying
+                let fullText = '';
+                if (hasFillerPrefix) {
+                    fullText = fillerPrefix + ' ';
+                }
+                if (hasPreviousOverlap) {
+                    fullText += take.previousOverlap + ' ';
+                }
+                fullText += take.text;
+                
+                // Build HTML with highlighting
+                let contentHtml = '';
+                if (hasFillerPrefix) {
+                    contentHtml += `<span class="filler">${fillerPrefix}</span> `;
+                }
+                if (hasPreviousOverlap) {
+                    contentHtml += `<span class="overlap">${take.previousOverlap}</span> `;
+                }
+                
+                // Highlight the main content and overlap if exists
+                if (hasNextOverlap) {
+                    // Find where overlap starts in the text
+                    const overlapStart = take.text.indexOf(take.overlap);
+                    if (overlapStart === 0) {
+                        // Overlap is at the beginning
+                        const mainContent = take.text.substring(take.overlap.length);
+                        contentHtml += `<span class="overlap">${take.overlap}</span> <span class="main-content">${mainContent}</span>`;
+                    } else {
+                        // Overlap is at the end
+                        const mainContent = take.text.substring(0, take.text.lastIndexOf(take.overlap));
+                        contentHtml += `<span class="main-content">${mainContent}</span> <span class="overlap">${take.overlap}</span>`;
+                    }
+                } else {
+                    // No overlap, just main content
+                    contentHtml += `<span class="main-content">${take.text}</span>`;
+                }
+                
+                // Add note if no overlap needed
+                let statusNote = '';
+                if (!hasPreviousOverlap && !hasNextOverlap) {
+                    statusNote = '<div style="margin-top: 10px; font-size: 0.85em; color: #28a745;">✓ Complete sentence - no overlap needed</div>';
+                }
+                
+                html += `
+                    <div class="take">
+                        <div class="take-header">
+                            <span class="take-number">Take ${takeNumber}</span>
+                            <div>
+                                <span class="take-duration">~${take.duration.toFixed(1)}s</span>
+                                <button class="copy-button" onclick="copyTake('${escapeHtml(fullText)}')">Copy</button>
+                            </div>
+                        </div>
+                        <div class="take-content">
+                            ${contentHtml}
+                        </div>
+                        ${statusNote}
+                    </div>
+                `;
+            });
+            
+            output.innerHTML = html;
+        }
+        
+        function escapeHtml(text) {
+            return text.replace(/'/g, "\\'").replace(/"/g, '\\"');
+        }
+        
+        function copyTake(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                // Could add a toast notification here
+                console.log('Copied to clipboard');
+            });
+        }
+        
+        // Auto-generate on page load
+        window.addEventListener('load', function() {
+            processScript();
+        });
+    </script>
+</body>
+</html>
