@@ -25,8 +25,7 @@ export default async function handler(req, res) {
       }],
       parameters: {
         aspectRatio: aspectRatio || "16:9",
-        sampleCount: sampleCount || 1,
-        generateAudio: true
+        sampleCount: sampleCount || 1
       }
     };
 
