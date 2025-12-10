@@ -1,0 +1,12 @@
+{
+  "name": "vo3-script-chunker",
+  "version": "1.0.0",
+  "description": "VEO3 Script Chunker - Break scripts into perfect 8-second chunks for video generation",
+  "type": "module",
+  "dependencies": {
+    "google-auth-library": "^9.6.3"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
